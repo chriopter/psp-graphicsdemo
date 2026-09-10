@@ -8,7 +8,7 @@ nobody has run it on real hardware yet.
 
 ![All thirteen scenes, two and a half seconds each](docs/demo.gif)
 
-The full run, thirty frames per second: [docs/demo.mp4](docs/demo.mp4).
+The full run, 104 seconds at thirty frames per second: [docs/demo.mp4](docs/demo.mp4).
 
 ## Scenes
 
@@ -62,12 +62,12 @@ Without Docker, `make` works against any pspdev install that has
 
 ## How the recording is made
 
-PPSSPP's headless build cannot save screenshots by itself, so
-`tools/record.mjs` drives its WebSocket debugger: a breakpoint on the
-`sceDisplaySetFrameBuf` stub fires once per presented frame, the registers
-say which VRAM buffer went to the screen, and `memory.read` pulls it out.
-`tools/make-video.sh` runs the whole demo that way and renders the MP4 and
-GIF with ffmpeg. Needs PPSSPPHeadless, node 22+, ffmpeg and Docker.
+PPSSPP's headless build cannot save screenshots by itself, so the demo
+records itself: when `ms0:/PSP/GRAPHICSDEMO.REC` exists it appends every
+second frame, raw, to `ms0:/PSP/GRAPHICSDEMO.RAW` and exits when the run is
+over. Frames are exact emulated vblanks, so timing does not depend on host
+speed. `tools/make-video.sh` sets that up, runs PPSSPPHeadless, and renders
+the MP4 and GIF with ffmpeg. Needs PPSSPPHeadless and ffmpeg.
 
 ## Layout
 
@@ -77,7 +77,7 @@ src/scene_*.c      one technique each, init() builds geometry, draw(frame) rende
 src/text.c         2D text from the pspsdk font sheet
 src/geometry.c     torus and grid generators from the pspsdk samples
 assets/*.raw       textures from the samples, linked with bin2o
-tools/             recorder, video, packaging
+tools/             video and packaging scripts
 ```
 
 ## License

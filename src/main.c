@@ -3,6 +3,7 @@
  */
 #include "demo.h"
 #include <pspctrl.h>
+#include <pspiofilemgr.h>
 
 PSP_MODULE_INFO("PSP Graphics Demo", 0, 1, 0);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
@@ -12,6 +13,49 @@ PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 static unsigned int __attribute__((aligned(16))) list[262144];
 void* demo_draw_buffer;
 static volatile int exit_request;
+
+/*
+ * Recording mode, for the video in the README. If ms0:/PSP/GRAPHICSDEMO.REC
+ * exists and holds "<frames> <step> <offset>", every <step>th frame from
+ * <offset> on is appended raw (512x272, 8888) to ms0:/PSP/GRAPHICSDEMO.RAW
+ * and the demo exits after <frames> frames. tools/make-video.sh sets it up.
+ */
+static SceUID rec_fd = -1;
+static int rec_frames, rec_step = 1, rec_offset;
+
+static void record_open(void)
+{
+	char text[64];
+	int n;
+	SceUID fd = sceIoOpen("ms0:/PSP/GRAPHICSDEMO.REC", PSP_O_RDONLY, 0);
+	if (fd < 0)
+		return;
+	n = sceIoRead(fd, text, sizeof(text) - 1);
+	sceIoClose(fd);
+	if (n <= 0)
+		return;
+	text[n] = 0;
+	if (sscanf(text, "%d %d %d", &rec_frames, &rec_step, &rec_offset) < 1 || rec_frames <= 0)
+		return;
+	if (rec_step < 1)
+		rec_step = 1;
+	rec_fd = sceIoOpen("ms0:/PSP/GRAPHICSDEMO.RAW", PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+}
+
+/* Called once the GE has finished the frame, before the swap. Returns 1 when done. */
+static int record_frame(int total)
+{
+	if (rec_fd < 0)
+		return 0;
+	if (total >= rec_offset && ((total - rec_offset) % rec_step) == 0)
+		sceIoWrite(rec_fd, sceGeEdramGetAddr() + (unsigned int)demo_draw_buffer, FRAME_SIZE);
+	if (total + 1 >= rec_frames) {
+		sceIoClose(rec_fd);
+		rec_fd = -1;
+		return 1;
+	}
+	return 0;
+}
 
 static int exit_callback(int arg1, int arg2, void* common)
 {
@@ -129,10 +173,11 @@ static void draw_overlay(int scene, int frame, int autoplay)
 
 int main(int argc, char* argv[])
 {
-	int i, scene = 0, frame = 0, autoplay = 1;
+	int i, scene = 0, frame = 0, total = 0, autoplay = 1;
 	unsigned int old_buttons = 0;
 
 	setup_callbacks();
+	record_open();
 
 	for (i = 0; i < demo_scene_count; ++i)
 		demo_scenes[i]->init();
@@ -158,11 +203,14 @@ int main(int argc, char* argv[])
 	while (!exit_request)
 	{
 		SceCtrlData pad;
-		unsigned int pressed;
+		unsigned int pressed = 0;
 
-		sceCtrlPeekBufferPositive(&pad, 1);
-		pressed = pad.Buttons & ~old_buttons;
-		old_buttons = pad.Buttons;
+		/* Peek can come back empty; only trust a real sample. */
+		memset(&pad, 0, sizeof(pad));
+		if (sceCtrlPeekBufferPositive(&pad, 1) > 0) {
+			pressed = pad.Buttons & ~old_buttons;
+			old_buttons = pad.Buttons;
+		}
 
 		if (pressed & PSP_CTRL_START)
 			break;
@@ -184,10 +232,14 @@ int main(int argc, char* argv[])
 		sceGuFinish();
 		sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
 
+		if (record_frame(total))
+			break;
+
 		sceDisplayWaitVblankStart();
 		demo_draw_buffer = sceGuSwapBuffers();
 
 		frame++;
+		total++;
 		if (autoplay && frame >= SCENE_FRAMES) {
 			scene = (scene + 1) % demo_scene_count;
 			frame = 0;
