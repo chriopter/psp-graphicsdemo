@@ -47,3 +47,5 @@ ffmpeg -y -loglevel error $IN -filter_complex \
   "${FILTER}${CONCAT}concat=n=$SCENES:v=1:a=0,crop=480:272:0:0,format=rgb24,fps=12,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
   docs/demo.gif
 ls -la docs/demo.mp4 docs/demo.gif
+
+rm -f "$RAW"
