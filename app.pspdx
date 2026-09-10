@@ -1,0 +1,12 @@
+{
+  "schema": "https://github.com/chriopter/pspdx/blob/master/manifest.md",
+  "id": "io.github.chriopter.graphicsdemo",
+  "rev": 0,
+  "url": "https://github.com/chriopter/psp-graphicsdemo/releases/download/v0.1.0/psp-graphicsdemo.zip",
+  "sha256": "",
+  "size": 0,
+  "display": {
+    "version": "0.1.0",
+    "notes": "First release: thirteen GU techniques, one scene each."
+  }
+}

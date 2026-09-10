@@ -1,0 +1,8 @@
+# build output
+*.o
+*.elf
+PARAM.SFO
+EBOOT.PBP
+dist/
+# recordings are built into docs/, raw frames stay local
+frames/
