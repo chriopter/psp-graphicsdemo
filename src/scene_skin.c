@@ -111,7 +111,7 @@ static void draw(int frame)
 
 	sceGumMatrixMode(GU_MODEL);
 	{
-		ScePspFVector3 rot = { GU_PI/7.0f, GU_PI/9.0f + deg(frame * 0.25f), 0 };
+		ScePspFVector3 rot = { GU_PI/7.0f, GU_PI/9.0f, 0 };
 		sceGumLoadIdentity();
 		sceGumRotateXYZ(&rot);
 	}
