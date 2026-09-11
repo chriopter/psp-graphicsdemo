@@ -105,5 +105,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGuEnable(GU_DEPTH_TEST);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "pan" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "speed" },
+	{ GLYPH_SQUARE,     "palette" },
+	{ GLYPH_CIRCLE,     "filter" },
+};
+
 const Scene scene_clut = { "PALETTE CYCLING", "8-bit XOR texture, 256-entry CLUT cycled",
-	"stick pan  ^v zoom  <> speed  [] palette  O filter", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

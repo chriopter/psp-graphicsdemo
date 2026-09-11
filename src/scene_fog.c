@@ -132,5 +132,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGuDepthMask(GU_FALSE);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "depth" },
+	{ GLYPH_LEFTRIGHT,  "fog start" },
+	{ GLYPH_SQUARE,     "colour" },
+	{ GLYPH_CIRCLE,     "show z" },
+};
+
 const Scene scene_fog = { "DEPTH BUFFER FOG", "z-buffer read as 8-bit texture through a CLUT",
-	"stick turn  ^v depth  <> start  [] colour  O show z", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

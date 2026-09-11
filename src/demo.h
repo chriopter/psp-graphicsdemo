@@ -42,10 +42,35 @@ typedef struct DemoInput {
 	unsigned int repeat;    /* pressed, then again every few frames while held */
 } DemoInput;
 
+/* The symbols of the pad, drawn rather than spelled out. */
+enum DemoGlyph {
+	GLYPH_STICK,
+	GLYPH_UPDOWN,
+	GLYPH_LEFTRIGHT,
+	GLYPH_SQUARE,
+	GLYPH_CIRCLE,
+	GLYPH_TRIANGLE,
+	GLYPH_CROSS,
+	GLYPH_SHOULDERS,
+	GLYPH_SELECT,
+	GLYPH_START
+};
+
+/* one control, and what it does here */
+typedef struct DemoHint {
+	int glyph;
+	const char* label;
+} DemoHint;
+
+int  demo_glyph_width(int glyph);
+int  demo_hints_width(const DemoHint* hints, int count);
+void demo_draw_hints(const DemoHint* hints, int count, int x, int y, unsigned int color);
+
 typedef struct Scene {
 	const char* name;      /* headline drawn in the overlay */
 	const char* detail;    /* one line on the technique */
-	const char* controls;  /* the scene's own buttons, shown once the player takes over */
+	const DemoHint* hints; /* the scene's own five controls, shown once the player takes over */
+	int hint_count;
 	void (*init)(void);    /* build geometry once, before the GU starts */
 	void (*reset)(void);   /* settings back to their defaults, at start and on SELECT */
 	/* frame is the scene's own clock: it stops while the scene is frozen */

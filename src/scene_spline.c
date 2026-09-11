@@ -188,5 +188,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGumDrawSpline(GU_NORMAL_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF, GRID_HEIGHT, GRID_WIDTH, 3, 3, indices, vertices);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "divide" },
+	{ GLYPH_SQUARE,     "new shape" },
+	{ GLYPH_CIRCLE,     "draw as" },
+};
+
 const Scene scene_spline = { "SPLINE SURFACE", "sceGumDrawSpline over an 18x18 control net",
-	"stick turn  ^v zoom  <> divide  [] new shape  O prim", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

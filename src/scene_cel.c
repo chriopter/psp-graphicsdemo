@@ -145,5 +145,13 @@ static void draw(int frame, const DemoInput* in)
 	}
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "lamp" },
+	{ GLYPH_SQUARE,     "colour" },
+	{ GLYPH_CIRCLE,     "outline" },
+};
+
 const Scene scene_cel = { "CEL SHADING", "1D lightmap via envmap coords, hull outline",
-	"stick turn  ^v zoom  <> light  [] colour  O outline", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

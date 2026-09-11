@@ -35,8 +35,9 @@ Scenes advance on their own every eight seconds and loop.
 Every scene is a toy, not a video: the stick has hold of whatever the scene
 is about, and each one carries its own knob and two switches. Touch anything
 and the autoplay holds, so the scene stays put while you work on it. The
-bottom band then names that scene's buttons and the top right shows what
-they are set to.
+bottom band then draws the pad: the scene's five controls on one row, what
+every scene answers to on the next, and the top right holds the settings
+they are on.
 
 | PSP | Action |
 |---|---|
