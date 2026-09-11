@@ -16,6 +16,18 @@ static const unsigned int colors[8] = {
 
 static InputVertex torus_vertices[NUM_SLICES * NUM_ROWS];
 
+static DemoTurn turn;
+static float size;
+static int step, alpha_test;
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	size = SPRITE_SIZE;
+	step = 1;
+	alpha_test = 1;
+}
+
 static void init(void)
 {
 	unsigned int i, j;
@@ -32,38 +44,53 @@ static void init(void)
 
 /* Two corners per sprite, offset along the world matrix's x+y so the
    quads face the camera whatever the rotation. */
-static void billboards(Vertex* vertices, const float* world)
+static int billboards(Vertex* vertices, const float* world)
 {
 	unsigned int i, j;
-	float sx = SPRITE_SIZE * world[0] + SPRITE_SIZE * world[1];
-	float sy = SPRITE_SIZE * world[4] + SPRITE_SIZE * world[5];
-	float sz = SPRITE_SIZE * world[8] + SPRITE_SIZE * world[9];
-	for (i = 0; i < NUM_SLICES; ++i) {
-		Vertex* row = &vertices[i * NUM_ROWS * 2];
+	float sx = size * world[0] + size * world[1];
+	float sy = size * world[4] + size * world[5];
+	float sz = size * world[8] + size * world[9];
+	Vertex* curr = vertices;
+	for (i = 0; i < NUM_SLICES; i += step) {
 		InputVertex* inrow = &torus_vertices[i * NUM_ROWS];
-		for (j = 0; j < NUM_ROWS; ++j) {
-			Vertex* curr = &row[j << 1];
+		for (j = 0; j < NUM_ROWS; j += step) {
 			InputVertex* in = &inrow[j];
 			curr[0].u = 0; curr[0].v = 0; curr[0].color = colors[(i+j)&7];
 			curr[0].x = in->x - sx; curr[0].y = in->y - sy; curr[0].z = in->z - sz;
 			curr[1].u = 1; curr[1].v = 1; curr[1].color = colors[(i+j)&7];
 			curr[1].x = in->x + sx; curr[1].y = in->y + sy; curr[1].z = in->z + sz;
+			curr += 2;
 		}
 	}
+	return (int)(curr - vertices);
 }
 
-static void draw(int frame)
+static void draw(int frame, const DemoInput* in)
 {
 	ScePspFMatrix4 world;
 	Vertex* vertices;
 	float val = frame * 0.6f;
+	int count;
+
+	demo_turn_update(&turn, in);
+	if (in->repeat & PSP_CTRL_RIGHT)
+		size = clampf(size * 1.15f, 0.004f, 0.3f);
+	if (in->repeat & PSP_CTRL_LEFT)
+		size = clampf(size / 1.15f, 0.004f, 0.3f);
+	if (in->pressed & PSP_CTRL_SQUARE)
+		step = step < 8 ? step * 2 : 1;
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		alpha_test ^= 1;
+	snprintf(demo_status, sizeof(demo_status), "%d  %.3f  %s",
+		(NUM_SLICES/step) * (NUM_ROWS/step), size, alpha_test ? "ALPHA TEST" : "NO TEST");
 
 	sceGuClearColor(0xff554433);
 	sceGuClearDepth(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
 
 	sceGuAlphaFunc(GU_GREATER, 0, 0xff);
-	sceGuEnable(GU_ALPHA_TEST);
+	if (alpha_test)
+		sceGuEnable(GU_ALPHA_TEST);
 
 	sceGuEnable(GU_TEXTURE_2D);
 	sceGuTexMode(GU_PSM_5551, 0, 0, 0);
@@ -77,7 +104,7 @@ static void draw(int frame)
 	sceGumPerspective(75.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0.0f, 0.0f, -3.5f };
+		ScePspFVector3 pos = { 0.0f, 0.0f, -3.5f * turn.zoom };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 	}
@@ -85,13 +112,15 @@ static void draw(int frame)
 	{
 		ScePspFVector3 rot = { deg(val * 0.3f), deg(val * 0.7f), deg(val * 1.3f) };
 		sceGumLoadIdentity();
+		demo_turn_apply(&turn);
 		sceGumRotateXYZ(&rot);
 	}
 	sceGumStoreMatrix(&world);
 
-	vertices = sceGuGetMemory(NUM_SLICES * NUM_ROWS * 2 * sizeof(Vertex));
-	billboards(vertices, (float*)&world);
-	sceGumDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, NUM_SLICES*NUM_ROWS*2, 0, vertices);
+	vertices = sceGuGetMemory((NUM_SLICES/step) * (NUM_ROWS/step) * 2 * sizeof(Vertex));
+	count = billboards(vertices, (float*)&world);
+	sceGumDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, count, 0, vertices);
 }
 
-const Scene scene_sprites = { "SPRITE CLOUD", "16384 GU_SPRITES billboards with alpha test", init, draw };
+const Scene scene_sprites = { "SPRITE CLOUD", "16384 GU_SPRITES billboards with alpha test",
+	"stick turn  ^v zoom  <> size  [] count  O alpha test", init, reset, draw };

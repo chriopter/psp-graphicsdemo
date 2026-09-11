@@ -30,20 +30,51 @@ static Vertex __attribute__((aligned(16))) border[6] = {
 
 #define VFMT (GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D)
 
+/* how much of the mirror surface is left in front of the reflection */
+static const unsigned char alphas[] = { 255, 170, 85, 0 };
+
+static DemoTurn turn;
+static float lift;
+static int alpha, stencil;
+
 static void init(void) {}
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	lift = 0.0f;
+	alpha = 0;
+	stencil = 1;
+}
 
 static void logo_texture(int func)
 {
 	sceGuTexMode(GU_PSM_4444, 0, 0, 0);
 	sceGuTexImage(0, 64, 64, 64, logo_start);
-	sceGuTexFunc(func, func == GU_TFX_REPLACE ? GU_TCC_RGBA : GU_TCC_RGB);
+	sceGuTexFunc(func, func == GU_TFX_ADD ? GU_TCC_RGB : GU_TCC_RGBA);
 	sceGuTexFilter(GU_LINEAR, GU_LINEAR);
 }
 
-static void draw(int frame)
+static void draw(int frame, const DemoInput* in)
 {
-	float move = fabsf(sinf(deg(frame))) + 1.0f;
-	float rot = deg(frame);
+	float move, rot = deg(frame);
+	Vertex* surface;
+	int i;
+
+	/* the stick walks the camera around the mirror */
+	demo_turn_update(&turn, in);
+	turn.pitch = clampf(turn.pitch, deg(-25.0f), deg(55.0f));
+	if (in->held & PSP_CTRL_RIGHT)
+		lift = clampf(lift + 0.03f, 0.0f, 2.5f);
+	if (in->held & PSP_CTRL_LEFT)
+		lift = clampf(lift - 0.03f, 0.0f, 2.5f);
+	if (in->pressed & PSP_CTRL_SQUARE)
+		alpha = (alpha + 1) % COUNT(alphas);
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		stencil ^= 1;
+	snprintf(demo_status, sizeof(demo_status), "mirror %d%%  %s",
+		alphas[alpha] * 100 / 255, stencil ? "STENCIL" : "NO STENCIL");
+	move = fabsf(sinf(deg(frame))) + 1.0f + lift;
 
 	sceGuClearColor(0xff554433);
 	sceGuClearDepth(0);
@@ -55,8 +86,8 @@ static void draw(int frame)
 	sceGumPerspective(60.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0, -0.5f, -5.5f };
-		ScePspFVector3 r = { deg(30.0f), deg(frame * 0.2f), 0.0f };
+		ScePspFVector3 pos = { 0, -0.5f, -5.5f * turn.zoom };
+		ScePspFVector3 r = { deg(30.0f) + turn.pitch, deg(frame * 0.2f) + turn.yaw, 0.0f };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 		sceGumRotateXYZ(&r);
@@ -78,10 +109,13 @@ static void draw(int frame)
 	sceGumDrawArray(GU_TRIANGLES, VFMT, 6, 0, mirror);
 	sceGuDepthMask(GU_FALSE);
 
-	/* 2. the reflection, flipped in y, only where the stencil is 1 */
+	/* 2. the reflection, flipped in y, only where the stencil is 1.
+	      With the test off it spills across the whole floor. */
 	logo_texture(GU_TFX_ADD);
 	sceGuEnable(GU_TEXTURE_2D);
 	sceGuFrontFace(GU_CW);
+	if (!stencil)
+		sceGuDisable(GU_STENCIL_TEST);
 	sceGuStencilFunc(GU_EQUAL, 1, 1);
 	sceGuStencilOp(GU_KEEP, GU_KEEP, GU_KEEP);
 	{
@@ -97,11 +131,15 @@ static void draw(int frame)
 
 	/* 3. the mirror surface itself, translucent, plus its border */
 	sceGuEnable(GU_TEXTURE_2D);
-	logo_texture(GU_TFX_REPLACE);
+	logo_texture(GU_TFX_MODULATE);
 	sceGuFrontFace(GU_CCW);
 	sceGuEnable(GU_BLEND);
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-	sceGumDrawArray(GU_TRIANGLES, VFMT, 6, 0, mirror);
+	surface = sceGuGetMemory(sizeof(mirror));
+	memcpy(surface, mirror, sizeof(mirror));
+	for (i = 0; i < 6; ++i)
+		surface[i].color = ((unsigned int)alphas[alpha] << 24) | 0xffffff;
+	sceGumDrawArray(GU_TRIANGLES, VFMT, 6, 0, surface);
 	sceGuDisable(GU_BLEND);
 	sceGuDisable(GU_TEXTURE_2D);
 	sceGumDrawArray(GU_TRIANGLES, VFMT, 6, 0, border);
@@ -120,4 +158,5 @@ static void draw(int frame)
 	sceGuFrontFace(GU_CW);
 }
 
-const Scene scene_mirror = { "STENCIL MIRROR", "stencil marks the mirror, flipped cube inside", init, draw };
+const Scene scene_mirror = { "STENCIL MIRROR", "stencil marks the mirror, flipped cube inside",
+	"stick orbit  ^v zoom  <> lift  [] mirror  O stencil", init, reset, draw };

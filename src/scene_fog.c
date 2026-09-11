@@ -13,20 +13,42 @@
 #define ZBUFFER_LINEAR(x) (0x600000 + (x))
 #define VRAM_ABS(x) (0x4000000 + (x))
 
+static const unsigned int fog_colors[] = { FOG_COLOR, 0xd0d0d0, 0x2060ff, 0x40a060 };
+
 static TCPVertex __attribute__((aligned(16))) torus_vertices[TORUS_SLICES*TORUS_ROWS];
 static unsigned short __attribute__((aligned(16))) torus_indices[TORUS_SLICES*TORUS_ROWS*6];
 static unsigned int __attribute__((aligned(16))) fogPalette[256];
 
-static void init(void)
+static DemoTurn turn;   /* its zoom is how far the torus sits from the camera */
+static int start, color, raw;
+
+/* The palette is what turns depth into fog, so every knob rebuilds it. */
+static void build_palette(void)
 {
 	int i;
-	generateTorusTCP(TORUS_SLICES, TORUS_ROWS, 1.0f, 0.5f, torus_vertices, torus_indices);
 	for (i = 0; i < 256; ++i) {
-		unsigned int far = (i - ZFAR_LIMIT) < 0 ? 0 : (i - ZFAR_LIMIT);
+		unsigned int far = (i - start) < 0 ? 0 : (i - start);
 		unsigned int near = (far * 256) / (ZNEAR_LIMIT-ZFAR_LIMIT);
 		unsigned int k = near > 255 ? 255 : near;
-		fogPalette[i] = (k << 24) | FOG_COLOR;
+		/* O shows the raw depth instead: the high byte straight as grey */
+		fogPalette[i] = raw ? (0xff000000 | (i << 16) | (i << 8) | i)
+		                    : ((k << 24) | fog_colors[color]);
 	}
+	sceKernelDcacheWritebackRange(fogPalette, sizeof(fogPalette));
+}
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	start = ZFAR_LIMIT;
+	color = 0;
+	raw = 0;
+	build_palette();
+}
+
+static void init(void)
+{
+	generateTorusTCP(TORUS_SLICES, TORUS_ROWS, 1.0f, 0.5f, torus_vertices, torus_indices);
 }
 
 /* Blit the depth buffer over the frame as an 8-bit texture. Only the high
@@ -57,8 +79,21 @@ static void render_fog(void)
 	}
 }
 
-static void draw(int frame)
+static void draw(int frame, const DemoInput* in)
 {
+	demo_turn_update(&turn, in);
+	if ((in->repeat & PSP_CTRL_RIGHT) && start < 224)
+		start += 8;
+	if ((in->repeat & PSP_CTRL_LEFT) && start > 0)
+		start -= 8;
+	if (in->pressed & PSP_CTRL_SQUARE)
+		color = (color + 1) % COUNT(fog_colors);
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		raw ^= 1;
+	if (in->repeat & (PSP_CTRL_LEFT | PSP_CTRL_RIGHT) || in->pressed & (PSP_CTRL_SQUARE | PSP_CTRL_CIRCLE))
+		build_palette();
+	snprintf(demo_status, sizeof(demo_status), "fog from %d%s", start, raw ? "  DEPTH" : "");
+
 	sceGuClearColor(0xff000000);
 	sceGuClearDepth(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
@@ -72,9 +107,10 @@ static void draw(int frame)
 	sceGumMatrixMode(GU_MODEL);
 	sceGumLoadIdentity();
 	{
-		ScePspFVector3 pos = { 0, 0, -5.0f + sinf(deg(frame)) * 2.5f };
+		ScePspFVector3 pos = { 0, 0, (-5.0f + sinf(deg(frame)) * 2.5f) * turn.zoom };
 		ScePspFVector3 rot = { deg(frame * 0.79f), deg(frame * 0.98f), deg(frame * 1.32f) };
 		sceGumTranslate(&pos);
+		demo_turn_apply(&turn);
 		sceGumRotateXYZ(&rot);
 	}
 	sceGumDrawArray(GU_TRIANGLES, TCP_VERTEX_FORMAT | GU_INDEX_16BIT | GU_TRANSFORM_3D, sizeof(torus_indices)/sizeof(unsigned short), torus_indices, torus_vertices);
@@ -85,8 +121,10 @@ static void draw(int frame)
 	sceGuDepthMask(GU_TRUE);
 	sceGuClutMode(GU_PSM_8888, 0, 255, 0);
 	sceGuClutLoad(256/8, fogPalette);
-	sceGuEnable(GU_BLEND);
-	sceGuBlendFunc(GU_ADD, GU_ONE_MINUS_SRC_ALPHA, GU_SRC_ALPHA, 0, 0);
+	if (!raw) {
+		sceGuEnable(GU_BLEND);
+		sceGuBlendFunc(GU_ADD, GU_ONE_MINUS_SRC_ALPHA, GU_SRC_ALPHA, 0, 0);
+	}
 	render_fog();
 	sceGuDisable(GU_BLEND);
 	sceGuDisable(GU_TEXTURE_2D);
@@ -94,4 +132,5 @@ static void draw(int frame)
 	sceGuDepthMask(GU_FALSE);
 }
 
-const Scene scene_fog = { "DEPTH BUFFER FOG", "z-buffer read as 8-bit texture through a CLUT", init, draw };
+const Scene scene_fog = { "DEPTH BUFFER FOG", "z-buffer read as 8-bit texture through a CLUT",
+	"stick turn  ^v depth  <> start  [] colour  O show z", init, reset, draw };

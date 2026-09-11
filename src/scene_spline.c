@@ -9,8 +9,35 @@ typedef struct { unsigned int color; ScePspFVector3 normal; ScePspFVector3 posit
 
 static Vertex __attribute__((aligned(16))) vertices[GRID_WIDTH * GRID_HEIGHT];
 static unsigned short __attribute__((aligned(16))) indices[GRID_WIDTH * GRID_HEIGHT * 6];
+static const int classic[8] = { 0, 2, 2, 2, 2, 2, 2, 2 };
 static int params[8] = { 0, 2, 2, 2, 2, 2, 2, 2 };
-static int last_change = -1;
+static int last_change;
+
+/* what the GE makes out of each patch, cycled with O */
+static const struct { int prim; const char* name; } prims[] = {
+	{ GU_TRIANGLE_STRIP, "FILL" },
+	{ GU_LINE_STRIP,     "LINES" },
+	{ GU_POINTS,         "POINTS" },
+};
+
+static DemoTurn turn;
+static int divide, prim;
+
+static void roll_shape(void)
+{
+	int i;
+	for (i = 0; i < 8; ++i)
+		params[i] = (int)((rand() / ((float)RAND_MAX)) * 6.0f);
+}
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	divide = 16;   /* what the GE tessellates with until told otherwise */
+	prim = 0;
+	last_change = 0;
+	memcpy(params, classic, sizeof(params));
+}
 
 static float hue2rgb(float m1, float m2, float h)
 {
@@ -100,22 +127,25 @@ static const struct { ScePspFVector3 position; unsigned int diffuse, specular; }
 	{ { 0,-1, 1}, 0xff808080, 0xff000000 },  /* back */
 };
 
-static void draw(int frame)
+static void draw(int frame, const DemoInput* in)
 {
 	unsigned int i;
 
+	demo_turn_update(&turn, in);
+	if ((in->repeat & PSP_CTRL_RIGHT) && divide < 32)
+		divide++;
+	if ((in->repeat & PSP_CTRL_LEFT) && divide > 1)
+		divide--;
+	if (in->pressed & PSP_CTRL_SQUARE)
+		roll_shape();
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		prim = (prim + 1) % COUNT(prims);
 	/* a new harmonic every four seconds; the first one is the classic */
-	if (frame == 0)
-		last_change = -1;
 	if (frame >= 240 && (frame / 240) != last_change) {
 		last_change = frame / 240;
-		for (i = 0; i < 8; ++i)
-			params[i] = (int)((rand() / ((float)RAND_MAX)) * 6.0f);
+		roll_shape();
 	}
-	if (frame == 0) {
-		static const int classic[8] = { 0, 2, 2, 2, 2, 2, 2, 2 };
-		memcpy(params, classic, sizeof(params));
-	}
+	snprintf(demo_status, sizeof(demo_status), "div %d  %s", divide, prims[prim].name);
 
 	sceGuClearColor(0xff000000);
 	sceGuClearDepth(0);
@@ -139,7 +169,7 @@ static void draw(int frame)
 	sceGumPerspective(75.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0, 0, -5.0f };
+		ScePspFVector3 pos = { 0, 0, -5.0f * turn.zoom };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 	}
@@ -147,11 +177,16 @@ static void draw(int frame)
 	sceGumLoadIdentity();
 	{
 		ScePspFVector3 rot = { deg(frame * 0.79f), deg(frame * 0.98f), deg(frame * 1.32f) };
+		demo_turn_apply(&turn);
 		sceGumRotateXYZ(&rot);
 	}
 
+	/* the GE does the tessellation: more divisions, more spans per patch */
+	sceGuPatchDivide(divide, divide);
+	sceGuPatchPrim(prims[prim].prim);
 	update_net(params);
 	sceGumDrawSpline(GU_NORMAL_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF, GRID_HEIGHT, GRID_WIDTH, 3, 3, indices, vertices);
 }
 
-const Scene scene_spline = { "SPLINE SURFACE", "sceGumDrawSpline over an 18x18 control net", init, draw };
+const Scene scene_spline = { "SPLINE SURFACE", "sceGumDrawSpline over an 18x18 control net",
+	"stick turn  ^v zoom  <> divide  [] new shape  O prim", init, reset, draw };
