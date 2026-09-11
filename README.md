@@ -42,8 +42,10 @@ Scenes advance on their own every eight seconds and loop.
 
 Get `psp-graphicsdemo.zip` from the [latest release](https://github.com/chriopter/psp-graphicsdemo/releases/latest).
 It contains `PSP/GAME/GraphicsDemo/EBOOT.PBP`; copy the `PSP` folder to a
-Memory Stick, or open the EBOOT in PPSSPP. The zip is what
-[PSPDX](https://github.com/chriopter/pspdx) installs from `app.pspdx`.
+Memory Stick, or open the EBOOT in PPSSPP. On a PSP with
+[PSPDX](https://github.com/chriopter/pspdx) it is listed as
+[`io.github.chriopter.graphicsdemo`](https://github.com/chriopter/pspdx-catalog/tree/master/apps/io.github.chriopter.graphicsdemo);
+the catalog picks up each new release on its own.
 
 Pushing a `v*` tag builds the same zip in CI and attaches it to a release.
 
