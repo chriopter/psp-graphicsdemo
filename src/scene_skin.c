@@ -62,16 +62,62 @@ static void gen_cylinder(unsigned slices, unsigned rows, float length, float rad
 	}
 }
 
+static float bend, twist;        /* what the bones are doing this frame */
+static float hold_bend, hold_twist, hold;  /* the hand on the stick, and how much of it shows */
+static float yaw, zoom;
+static int arms, pose;
+
 static void init(void)
 {
 	gen_cylinder(CYLINDER_ROWS, CYLINDER_SLICES, CYLINDER_LENGTH, CYLINDER_RADIUS, WEIGHTS_PER_VERTEX);
 }
 
-static void draw(int frame)
+static void reset(void)
+{
+	bend = 1.0f;
+	twist = 0.0f;
+	hold_bend = hold_twist = hold = 0.0f;
+	yaw = 0.0f;
+	zoom = 1.0f;
+	arms = 4;
+	pose = 0;
+}
+
+static void draw(int frame, const DemoInput* in)
 {
 	ScePspFMatrix4 bones[WEIGHTS_PER_VERTEX];
 	ScePspFVector3 lightDir = { 0, 0, 1 };
+	float swing;
 	int q;
+
+	/* The stick bends the chain by hand. Let go and the arms swing on by
+	   themselves again, unless O was pressed to keep the pose. */
+	/* The chain swings by itself; the stick takes it over and fades back out
+	   of the way on release, so a scene nobody touches bends exactly as the
+	   sample always did. */
+	demo_zoom_update(&zoom, in);
+	swing = cosf(deg(frame));
+	if (in->x != 0.0f || in->y != 0.0f) {
+		hold_bend = in->x * 1.3f;
+		hold_twist = in->y * 0.9f;
+		hold += (1.0f - hold) * 0.2f;
+	} else if (!pose) {
+		hold *= 0.92f;
+		if (hold < 0.002f)
+			hold = 0.0f;
+	}
+	bend = swing + (hold_bend - swing) * hold;
+	twist = hold_twist * hold;
+	if (in->held & PSP_CTRL_RIGHT)
+		yaw += deg(2.0f);
+	if (in->held & PSP_CTRL_LEFT)
+		yaw -= deg(2.0f);
+	if (in->pressed & PSP_CTRL_SQUARE)
+		arms = (arms % 4) + 1;
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		pose ^= 1;
+	snprintf(demo_status, sizeof(demo_status), "bend %+.2f  %d arms  %s",
+		bend, arms, pose ? "POSE" : "AUTO");
 
 	sceGuClearColor(0xff554433);
 	sceGuClearDepth(0);
@@ -90,14 +136,14 @@ static void draw(int frame)
 	sceGumPerspective(75.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0, 0, -5.0f };
+		ScePspFVector3 pos = { 0, 0, -5.0f * zoom };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 	}
 
 	/* a chain of eight bones, each bent a little further than its parent */
 	for (q = 0; q < WEIGHTS_PER_VERTEX; ++q) {
-		ScePspFVector3 rot = { 0, 0, cosf(deg(frame * 1.0f)) };
+		ScePspFVector3 rot = { 0, twist, bend };
 		gumLoadIdentity(&bones[q]);
 		gumRotateXYZ(&bones[q], &rot);
 		if (q > 0) {
@@ -111,11 +157,11 @@ static void draw(int frame)
 
 	sceGumMatrixMode(GU_MODEL);
 	{
-		ScePspFVector3 rot = { GU_PI/7.0f, GU_PI/9.0f, 0 };
+		ScePspFVector3 rot = { GU_PI/7.0f, GU_PI/9.0f + yaw, 0 };
 		sceGumLoadIdentity();
 		sceGumRotateXYZ(&rot);
 	}
-	for (q = 0; q < 4; ++q) {
+	for (q = 0; q < arms; ++q) {
 		ScePspFVector3 rot = { 0, 0, GU_PI/2.0f };
 		sceGumRotateXYZ(&rot);
 		sceGumDrawArray(GU_TRIANGLES,
@@ -124,4 +170,5 @@ static void draw(int frame)
 	}
 }
 
-const Scene scene_skin = { "MATRIX SKINNING", "eight bone matrices, cubic weights per vertex", init, draw };
+const Scene scene_skin = { "MATRIX SKINNING", "eight bone matrices, cubic weights per vertex",
+	"stick bend  ^v zoom  <> turn  [] arms  O keep pose", init, reset, draw };

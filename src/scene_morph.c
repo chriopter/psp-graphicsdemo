@@ -45,11 +45,43 @@ static void init(void)
 	}
 }
 
-static void draw(int frame)
+static DemoTurn turn;
+static float weight;   /* how much of the sphere is left in the blend */
+static int manual, flat;
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	weight = 0.5f;
+	manual = 0;
+	flat = 0;
+}
+
+static void draw(int frame, const DemoInput* in)
 {
 	ScePspFVector3 lpos = { 1, 0, 1 };
-	float w = 0.5f * sinf(deg(frame * 1.5f)) + 0.5f;
+	float w;
 
+	demo_turn_update(&turn, in);
+	if (in->held & PSP_CTRL_RIGHT) {
+		weight = clampf(weight - 0.02f, 0.0f, 1.0f);
+		manual = 1;
+	}
+	if (in->held & PSP_CTRL_LEFT) {
+		weight = clampf(weight + 0.02f, 0.0f, 1.0f);
+		manual = 1;
+	}
+	if (in->pressed & PSP_CTRL_SQUARE)
+		manual ^= 1;
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		flat ^= 1;
+	if (!manual)
+		weight = 0.5f * sinf(deg(frame * 1.5f)) + 0.5f;
+	w = weight;
+	snprintf(demo_status, sizeof(demo_status), "cube %d%%  %s  %s",
+		(int)((1.0f - w) * 100.0f + 0.5f), manual ? "HAND" : "AUTO", flat ? "FLAT" : "SMOOTH");
+
+	sceGuShadeModel(flat ? GU_FLAT : GU_SMOOTH);
 	sceGuClearColor(0xff554433);
 	sceGuClearDepth(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
@@ -65,7 +97,7 @@ static void draw(int frame)
 	sceGumPerspective(75.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0.0f, 0.0f, -2.5f };
+		ScePspFVector3 pos = { 0.0f, 0.0f, -2.5f * turn.zoom };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 	}
@@ -73,6 +105,7 @@ static void draw(int frame)
 	{
 		ScePspFVector3 rot = { deg(frame * 0.79f), deg(frame * 0.98f), deg(frame * 1.32f) };
 		sceGumLoadIdentity();
+		demo_turn_apply(&turn);
 		sceGumRotateXYZ(&rot);
 	}
 
@@ -82,4 +115,5 @@ static void draw(int frame)
 		sizeof(indices)/sizeof(unsigned short), indices, vertices);
 }
 
-const Scene scene_morph = { "MORPH TARGETS", "GU_VERTICES(2), blended by sceGuMorphWeight", init, draw };
+const Scene scene_morph = { "MORPH TARGETS", "GU_VERTICES(2), blended by sceGuMorphWeight",
+	"stick turn  ^v zoom  <> blend  [] auto  O flat", init, reset, draw };

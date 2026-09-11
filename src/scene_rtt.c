@@ -25,9 +25,24 @@ static Vertex __attribute__((aligned(16))) cube_vertices[12*3] = {
 static NPVertex __attribute__((aligned(16))) torus_vertices[TORUS_SLICES*TORUS_ROWS];
 static unsigned short __attribute__((aligned(16))) torus_indices[TORUS_SLICES*TORUS_ROWS*6];
 
+/* the target is square and its side is a power of two, so it can be a texture */
+static const int sizes[] = { 128, 64, 32, 16 };
+
+static DemoTurn turn;
+static float spin;
+static int size, nearest;
+
 static void init(void)
 {
 	generateTorusNP(TORUS_ROWS, TORUS_SLICES, 1.0f, 0.5f, torus_vertices, torus_indices);
+}
+
+static void reset(void)
+{
+	demo_turn_reset(&turn);
+	spin = 0.0f;
+	size = 0;
+	nearest = 0;
 }
 
 static void draw_torus(int frame)
@@ -51,7 +66,7 @@ static void draw_torus(int frame)
 	}
 	sceGumMatrixMode(GU_MODEL);
 	{
-		ScePspFVector3 rot = { deg(frame * 0.79f), deg(frame * 0.98f), deg(frame * 1.32f) };
+		ScePspFVector3 rot = { deg(frame * 0.79f), deg(frame * 0.98f) + spin, deg(frame * 1.32f) };
 		sceGumLoadIdentity();
 		sceGumRotateXYZ(&rot);
 	}
@@ -68,7 +83,7 @@ static void draw_cube(int frame)
 	sceGumPerspective(75.0f, 16.0f/9.0f, 0.5f, 1000.0f);
 	sceGumMatrixMode(GU_VIEW);
 	{
-		ScePspFVector3 pos = { 0.0f, 0.0f, -3.0f };
+		ScePspFVector3 pos = { 0.0f, 0.0f, -3.0f * turn.zoom };
 		sceGumLoadIdentity();
 		sceGumTranslate(&pos);
 	}
@@ -76,22 +91,36 @@ static void draw_cube(int frame)
 	{
 		ScePspFVector3 rot = { deg(frame * 0.263f), deg(frame * 0.32f), deg(frame * 0.44f) };
 		sceGumLoadIdentity();
+		demo_turn_apply(&turn);
 		sceGumRotateXYZ(&rot);
 	}
 	/* the offscreen buffer, read back as a plain 8888 texture */
 	sceGuEnable(GU_TEXTURE_2D);
 	sceGuTexMode(GU_PSM_8888, 0, 0, 0);
-	sceGuTexImage(0, RT_SIZE, RT_SIZE, RT_SIZE, sceGeEdramGetAddr() + VRAM_RT);
+	/* the drawn corner of the target; the stride stays the full 128 */
+	sceGuTexImage(0, sizes[size], sizes[size], RT_SIZE, sceGeEdramGetAddr() + VRAM_RT);
 	sceGuTexFunc(GU_TFX_ADD, GU_TCC_RGB);
-	sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+	sceGuTexFilter(nearest ? GU_NEAREST : GU_LINEAR, nearest ? GU_NEAREST : GU_LINEAR);
 	sceGumDrawArray(GU_TRIANGLES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 12*3, 0, cube_vertices);
 	sceGuDisable(GU_TEXTURE_2D);
 }
 
-static void draw(int frame)
+static void draw(int frame, const DemoInput* in)
 {
-	/* pass 1: torus into the 128x128 target */
-	demo_target_begin();
+	demo_turn_update(&turn, in);
+	if (in->held & PSP_CTRL_RIGHT)
+		spin += deg(2.0f);
+	if (in->held & PSP_CTRL_LEFT)
+		spin -= deg(2.0f);
+	if (in->pressed & PSP_CTRL_SQUARE)
+		size = (size + 1) % COUNT(sizes);
+	if (in->pressed & PSP_CTRL_CIRCLE)
+		nearest ^= 1;
+	snprintf(demo_status, sizeof(demo_status), "target %dx%d  %s",
+		sizes[size], sizes[size], nearest ? "NEAREST" : "LINEAR");
+
+	/* pass 1: torus into the target */
+	demo_target_begin(sizes[size]);
 	sceGuClearColor(0xffffffff);
 	sceGuClearDepth(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT | GU_DEPTH_BUFFER_BIT);
@@ -105,4 +134,5 @@ static void draw(int frame)
 	draw_cube(frame);
 }
 
-const Scene scene_rtt = { "RENDER TO TEXTURE", "torus into a 128x128 VRAM target, then a cube", init, draw };
+const Scene scene_rtt = { "RENDER TO TEXTURE", "torus into a 128x128 VRAM target, then a cube",
+	"stick turn  ^v zoom  <> spin torus  [] size  O filter", init, reset, draw };
