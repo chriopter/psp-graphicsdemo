@@ -146,5 +146,13 @@ static void draw(int frame, const DemoInput* in)
 		draw_markers(light, count);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "lights" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "shine" },
+	{ GLYPH_SQUARE,     "count" },
+	{ GLYPH_CIRCLE,     "type" },
+};
+
 const Scene scene_lights = { "HARDWARE LIGHTS", "four point lights, diffuse + specular per vertex",
-	"stick lights  ^v zoom  <> shine  [] count  O type", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

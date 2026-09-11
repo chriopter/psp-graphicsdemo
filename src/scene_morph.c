@@ -115,5 +115,13 @@ static void draw(int frame, const DemoInput* in)
 		sizeof(indices)/sizeof(unsigned short), indices, vertices);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "blend" },
+	{ GLYPH_SQUARE,     "auto" },
+	{ GLYPH_CIRCLE,     "shading" },
+};
+
 const Scene scene_morph = { "MORPH TARGETS", "GU_VERTICES(2), blended by sceGuMorphWeight",
-	"stick turn  ^v zoom  <> blend  [] auto  O flat", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

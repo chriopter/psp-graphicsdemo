@@ -134,5 +134,13 @@ static void draw(int frame, const DemoInput* in)
 	draw_cube(frame);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "spin" },
+	{ GLYPH_SQUARE,     "target" },
+	{ GLYPH_CIRCLE,     "filter" },
+};
+
 const Scene scene_rtt = { "RENDER TO TEXTURE", "torus into a 128x128 VRAM target, then a cube",
-	"stick turn  ^v zoom  <> spin torus  [] size  O filter", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

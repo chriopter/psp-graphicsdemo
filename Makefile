@@ -1,5 +1,5 @@
 TARGET = graphicsdemo
-OBJS = src/main.o src/text.o src/scenes.o src/geometry.o \
+OBJS = src/main.o src/text.o src/hint.o src/scenes.o src/geometry.o \
 	src/scene_cube.o src/scene_lights.o src/scene_envmap.o src/scene_cel.o \
 	src/scene_morph.o src/scene_skin.o src/scene_spline.o src/scene_rtt.o \
 	src/scene_mirror.o src/scene_shadow.o src/scene_fog.o src/scene_sprites.o \

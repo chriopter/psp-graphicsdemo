@@ -214,12 +214,21 @@ void demo_target_end(void)
 	sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
 }
 
-/* Autoplay shows the technique; once the player takes over, the band grows
-   a line for the scene's buttons and the top right shows its settings. */
+/* what every scene answers to, whoever is holding the pad */
+static const DemoHint global_hints[] = {
+	{ GLYPH_SHOULDERS, "scene" },
+	{ GLYPH_CROSS,     "play" },
+	{ GLYPH_TRIANGLE,  "freeze" },
+	{ GLYPH_SELECT,    "reset" },
+	{ GLYPH_START,     "exit" },
+};
+
+/* Autoplay shows the technique; once the player takes over, the band opens up
+   for the scene's own controls, the pad's underneath, and the settings go top right. */
 static void draw_overlay(int scene, int frame, int autoplay, int frozen)
 {
 	const Scene* s = demo_scenes[scene];
-	int band = autoplay ? 26 : 44;
+	int band = autoplay ? 26 : 64;
 	char counter[16], status[80];
 
 	demo_reset_state();
@@ -233,6 +242,8 @@ static void draw_overlay(int scene, int frame, int autoplay, int frozen)
 	demo_draw_rect(0, SCR_HEIGHT - band, SCR_WIDTH, band, 0x90000000);
 	if (autoplay)
 		demo_draw_rect(0, SCR_HEIGHT - 2, (SCR_WIDTH * frame) / SCENE_FRAMES, 2, 0xffe0b060);
+	else
+		demo_draw_rect(0, SCR_HEIGHT - band, SCR_WIDTH, 1, 0x70e0b060);
 
 	demo_text_begin();
 	sprintf(counter, "%02d/%02d", scene + 1, demo_scene_count);
@@ -244,10 +255,11 @@ static void draw_overlay(int scene, int frame, int autoplay, int frozen)
 		demo_draw_string(hint, SCR_WIDTH - 8 - demo_string_width(hint, 0), 5, 0xff909090, 0);
 		return;
 	}
-	demo_draw_string(s->detail, 8, SCR_HEIGHT - 39, 0xffd8d8d8, 0);
-	demo_draw_string(s->controls, 8, SCR_HEIGHT - 21, 0xffe0b060, 0);
+	demo_draw_string(s->detail, 8, SCR_HEIGHT - 60, 0xffd8d8d8, 0);
 	snprintf(status, sizeof(status), "%s%s", frozen ? "||  " : "", demo_status);
 	demo_draw_string(status, SCR_WIDTH - 8 - demo_string_width(status, 0), 5, 0xffffffff, 0);
+	demo_draw_hints(s->hints, s->hint_count, 8, SCR_HEIGHT - 41, 0xffffffff);
+	demo_draw_hints(global_hints, COUNT(global_hints), 8, SCR_HEIGHT - 21, 0xff9c9c9c);
 }
 
 int main(int argc, char* argv[])

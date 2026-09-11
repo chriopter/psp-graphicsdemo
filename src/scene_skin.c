@@ -170,5 +170,13 @@ static void draw(int frame, const DemoInput* in)
 	}
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "bend" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "turn" },
+	{ GLYPH_SQUARE,     "arms" },
+	{ GLYPH_CIRCLE,     "hold pose" },
+};
+
 const Scene scene_skin = { "MATRIX SKINNING", "eight bone matrices, cubic weights per vertex",
-	"stick bend  ^v zoom  <> turn  [] arms  O keep pose", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

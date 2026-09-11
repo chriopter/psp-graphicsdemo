@@ -96,5 +96,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGumDrawArray(GU_TRIANGLES, NP_VERTEX_FORMAT | GU_INDEX_16BIT | GU_TRANSFORM_3D, sizeof(torus_indices)/sizeof(unsigned short), torus_indices, torus_vertices);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "spin map" },
+	{ GLYPH_SQUARE,     "map size" },
+	{ GLYPH_CIRCLE,     "light" },
+};
+
 const Scene scene_envmap = { "ENVIRONMENT MAP", "GU_ENVIRONMENT_MAP, matrix in light slots 2+3",
-	"stick turn  ^v zoom  <> spin map  [] scale  O light", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

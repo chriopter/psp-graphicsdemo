@@ -85,5 +85,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGumDrawArray(GU_TRIANGLES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, 12*3, 0, vertices);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "tiling" },
+	{ GLYPH_SQUARE,     "tex mode" },
+	{ GLYPH_CIRCLE,     "filter" },
+};
+
 const Scene scene_cube = { "TEXTURED CUBE", "sceGumDrawArray, 4444 texture added to colours",
-	"stick turn  ^v zoom  <> tiling  [] func  O filter", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

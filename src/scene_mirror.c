@@ -158,5 +158,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGuFrontFace(GU_CW);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "orbit" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "lift" },
+	{ GLYPH_SQUARE,     "mirror" },
+	{ GLYPH_CIRCLE,     "stencil" },
+};
+
 const Scene scene_mirror = { "STENCIL MIRROR", "stencil marks the mirror, flipped cube inside",
-	"stick orbit  ^v zoom  <> lift  [] mirror  O stencil", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

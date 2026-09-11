@@ -122,5 +122,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGumDrawArray(GU_SPRITES, GU_TEXTURE_32BITF | GU_COLOR_8888 | GU_VERTEX_32BITF | GU_TRANSFORM_3D, count, 0, vertices);
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "turn" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "size" },
+	{ GLYPH_SQUARE,     "count" },
+	{ GLYPH_CIRCLE,     "alpha test" },
+};
+
 const Scene scene_sprites = { "SPRITE CLOUD", "16384 GU_SPRITES billboards with alpha test",
-	"stick turn  ^v zoom  <> size  [] count  O alpha test", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };

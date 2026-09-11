@@ -185,5 +185,13 @@ static void draw(int frame, const DemoInput* in)
 	sceGumMatrixMode(GU_MODEL); sceGumLoadIdentity();
 }
 
+static const DemoHint hints[] = {
+	{ GLYPH_STICK,      "lamp" },
+	{ GLYPH_UPDOWN,     "zoom" },
+	{ GLYPH_LEFTRIGHT,  "orbit" },
+	{ GLYPH_SQUARE,     "distance" },
+	{ GLYPH_CIRCLE,     "show map" },
+};
+
 const Scene scene_shadow = { "PROJECTED SHADOW", "shadow map projected via GU_TEXTURE_MATRIX",
-	"stick light  ^v zoom  <> orbit  [] distance  O map", init, reset, draw };
+	hints, COUNT(hints), init, reset, draw };
