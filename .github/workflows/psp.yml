@@ -33,6 +33,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: psp-graphicsdemo-${{ github.sha }}
@@ -41,3 +42,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --generate-notes
+      - uses: chriopter/pspdx/action@master
+        with:
+          tag: ${{ github.ref_name }}

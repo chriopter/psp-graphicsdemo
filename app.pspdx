@@ -1,0 +1,17 @@
+{
+  "schema":   "https://github.com/chriopter/pspdx/blob/master/manifest.md",
+  "id":       "io.github.chriopter.graphicsdemo",
+  "name":     "PSP Graphics Demo",
+  "author":   "chriopter",
+  "summary":  "Thirteen Graphics Engine tricks, one scene each.",
+  "category": "demos",
+  "license":  "BSD-3-Clause",
+  "repo":     "https://github.com/chriopter/psp-graphicsdemo",
+
+  "version":  "0.1.0",
+  "rev":      1789078342,
+  "url":      "https://github.com/chriopter/psp-graphicsdemo/releases/download/v0.1.0/psp-graphicsdemo.zip",
+  "sha256":   "9de40f2b9905d2eb871ad7130f6fef4ae40367244f3c5f233f78ca73f925f37f",
+  "size":     108557,
+  "root":     "PSP/GAME/GraphicsDemo/"
+}

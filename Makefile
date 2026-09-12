@@ -18,6 +18,8 @@ LIBS = -lpspgum -lpspgu -lpspge -lpspdisplay -lpspctrl -lm
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = PSP Graphics Demo
 PSP_EBOOT_ICON = assets/ICON0.PNG
+PSP_EBOOT_PIC1 = assets/PIC1.PNG
+PSP_EBOOT_ICON1 = assets/ICON1.PMF
 
 PSPSDK = $(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
