@@ -8,10 +8,10 @@
   "license":  "BSD-3-Clause",
   "repo":     "https://github.com/chriopter/psp-graphicsdemo",
 
-  "version":  "0.1.0",
-  "rev":      1789078342,
-  "url":      "https://github.com/chriopter/psp-graphicsdemo/releases/download/v0.1.0/psp-graphicsdemo.zip",
-  "sha256":   "9de40f2b9905d2eb871ad7130f6fef4ae40367244f3c5f233f78ca73f925f37f",
-  "size":     108557,
+  "version":  "0.1.1",
+  "rev":      1789200673,
+  "url":      "https://github.com/chriopter/psp-graphicsdemo/releases/download/v0.1.1/psp-graphicsdemo.zip",
+  "sha256":   "e0f6c9b36b772cafe3bacbfbdd7fb9780339c6a4138a9b7df18ce19c391dc0b5",
+  "size":     193257,
   "root":     "PSP/GAME/GraphicsDemo/"
 }
