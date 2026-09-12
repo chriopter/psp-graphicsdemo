@@ -79,9 +79,8 @@ It contains `PSP/GAME/GraphicsDemo/EBOOT.PBP`; copy the `PSP` folder to a
 Memory Stick, or open the EBOOT in PPSSPP.
 
 Pushing a `v*` tag builds the same zip in CI and attaches it to a release.
-The app is listed in [PSPDX](https://github.com/chriopter/pspdx): `app.pspdx`
-in the root describes it, and the release action fills in the release half at
-every tag.
+The app is listed in [PSPDX](https://github.com/chriopter/pspdx); the release's
+zip with the EBOOT is all it needs.
 
 ## Building
 
