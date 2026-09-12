@@ -76,12 +76,12 @@ below is still what the demo does on its own.
 
 Get `psp-graphicsdemo.zip` from the [latest release](https://github.com/chriopter/psp-graphicsdemo/releases/latest).
 It contains `PSP/GAME/GraphicsDemo/EBOOT.PBP`; copy the `PSP` folder to a
-Memory Stick, or open the EBOOT in PPSSPP. On a PSP with
-[PSPDX](https://github.com/chriopter/pspdx) it is listed as
-[`io.github.chriopter.graphicsdemo`](https://github.com/chriopter/pspdx-catalog/tree/master/apps/io.github.chriopter.graphicsdemo);
-the catalog picks up each new release on its own.
+Memory Stick, or open the EBOOT in PPSSPP.
 
 Pushing a `v*` tag builds the same zip in CI and attaches it to a release.
+The app is listed in [PSPDX](https://github.com/chriopter/pspdx): `app.pspdx`
+in the root describes it, and the release action fills in the release half at
+every tag.
 
 ## Building
 
