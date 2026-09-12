@@ -1,0 +1,8 @@
+{
+  "schema": "https://github.com/chriopter/pspdx/blob/master/schema/v1.pspdx",
+  "name": "PSP Graphics Demo",
+  "summary": "Thirteen interactive demos of the PSP Graphics Engine.",
+  "category": "demo",
+  "license": "BSD-3-Clause",
+  "installdir": "PSP/GAME/GraphicsDemo"
+}
