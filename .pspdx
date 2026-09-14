@@ -3,7 +3,7 @@
   "source": "https://github.com/chriopter/psp-graphicsdemo",
   "name": "PSP Graphics Demo",
   "summary": "Thirteen interactive demos of the PSP Graphics Engine.",
-  "category": "demo",
+  "tags": ["demo"],
   "license": "BSD-3-Clause",
   "installdir": "PSP/GAME/GraphicsDemo"
 }
