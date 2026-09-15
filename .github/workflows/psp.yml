@@ -15,12 +15,12 @@ jobs:
     container: pspdev/pspdev:latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build EBOOT.PBP
         run: make
       - name: Package
         run: apk add --no-cache zip && sh tools/package.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: psp-graphicsdemo-${{ github.sha }}
           path: dist/*
@@ -33,7 +33,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: psp-graphicsdemo-${{ github.sha }}
           path: dist
