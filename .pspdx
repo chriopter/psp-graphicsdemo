@@ -4,6 +4,7 @@
   "name": "PSP Graphics Demo",
   "summary": "Thirteen interactive demos of the PSP Graphics Engine.",
   "category": "demo",
+  "tags": ["unreleased"],
   "license": "BSD-3-Clause",
   "installdir": "PSP/GAME/GraphicsDemo"
 }
